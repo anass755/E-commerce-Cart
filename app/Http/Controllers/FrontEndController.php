@@ -15,7 +15,7 @@ class FrontEndController extends Controller
     {
         $products = Product::where('sub_category', $request->sub_category)->get();
         return view('frontend.index', compact('products'));
-       
+    //    hlllllloo
     }
 
     public function addToCart(Request $request, $product_id)
