@@ -14,11 +14,10 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-     
-      $products = Product::with(['category', 'subcategory'])->get();
-      return view('products.index', compact('products'));
+        $products = Product::with(['category', 'subcategory'])->paginate(10);
+        return view('products.index', compact('products'));
     }
 
     /**
@@ -102,7 +101,7 @@ class ProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Request $request, string $id)
     {
       
       $products=Product::findOrFail($id);
@@ -111,7 +110,9 @@ class ProductController extends Controller
     
       $subcategories=Category::where('parent_category',$products->category_id)->get();
       
-     return view('products.edit',compact('products','categories','subcategories'));
+      // Capture current page from request
+      $currentPage = $request->get('page', 1);
+     return view('products.edit',compact('products','categories','subcategories','currentPage'));
     }
 
     /**
@@ -161,7 +162,9 @@ class ProductController extends Controller
         ]);
 
       if($result){
-        return redirect()->route('product.index');
+        // Get the current page from the request, default to 1
+        $currentPage = $request->get('current_page', 1);
+        return redirect()->route('product.index', ['page' => $currentPage]);
       }  
 
     }
