@@ -44,7 +44,7 @@
                             <td>{{ $product->rate }}</td>
                             <td style="width:100px;"><img src="{{ ($product->photo == 'defaultproduct.png')? asset('images/default_images/defaultproduct.png') : asset('app/products/' . $product->photo) }}" alt="category Image" class="img-fluid"></td>
                             <td class="edit-btn">
-                                <a href="{{ route('product.edit',$product->id) }}" class="btn btn-primary e-d-btn"  style="color:white;width:71px;">Edit</a>
+                                <a href="{{ route('product.edit', ['product' => $product->id, 'page' => request('page', 1)]) }}" class="btn btn-primary e-d-btn"  style="color:white;width:71px;">Edit</a>
                                 <form action="{{ route('product.destroy',$product->id) }}" method="post">
                                     @csrf
                                     @method('delete')
@@ -56,6 +56,11 @@
                       @endforeach
                     </tbody>
                 </table>
+                
+                <!-- Add pagination links -->
+                <div class="d-flex justify-content-center">
+                    {{ $products->links() }}
+                </div>
             </div>
         </div>        
     </div>

@@ -5,6 +5,8 @@
                 <form method="post" action="{{ route('product.update',$products->id) }}" enctype="multipart/form-data" >
                     @csrf
                     @method('put')
+                    <!-- Hidden field to preserve current page -->
+                    <input type="hidden" name="current_page" value="{{ $currentPage ?? 1 }}">
                     <div class="modal-header">						
                         <h4 class="modal-title">Edit Category</h4>
                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>

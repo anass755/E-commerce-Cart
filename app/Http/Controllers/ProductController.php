@@ -14,11 +14,10 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-     
-      $products = Product::with(['category', 'subcategory'])->get();
-      return view('products.index', compact('products'));
+        $products = Product::with(['category', 'subcategory'])->paginate(10);
+        return view('products.index', compact('products'));
     }
 
     /**
@@ -102,7 +101,7 @@ class ProductController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Request $request, string $id)
     {
       
       $products=Product::findOrFail($id);
@@ -111,7 +110,9 @@ class ProductController extends Controller
     
       $subcategories=Category::where('parent_category',$products->category_id)->get();
       
-     return view('products.edit',compact('products','categories','subcategories'));
+      // Capture current page from request
+      $currentPage = $request->get('page', 1);
+     return view('products.edit',compact('products','categories','subcategories','currentPage'));
     }
 
     /**
@@ -119,51 +120,57 @@ class ProductController extends Controller
      */
     public function update(Request $request, string $id)
     {
-      $validated=$request->validate([
-        'name'             => 'required',
-        'code'             => 'required',
-        'shortdescription'=> 'required',
-        'specification'    => 'required',
-        'rate'             => 'required',
-        'photo'            => 'required' // Max 2MB
-      ]);
-
-
-      $path=public_path().'/app/products';
-
-      if(!File::isDirectory($path)){
-        File::makeDirectory($path,0777,true,true);
-      }
-      
-      $author = Product::find($id);
-      $image = $request->file('photo');
-
-      if(($request->hasFile('photo') && $request->file('photo')->isValid())){
-        File::delete(public_path().'/app/products/'. $author->photo);
-
-        $imageName = time().'.'.$image->getClientOriginalExtension();
-        Storage::disk('public2')->put($imageName, file_get_contents($image));
-      }
-      else{
-        $imageName = $author->image;
-    }
-
-        $result=Product::find($id)->update([
-            'category_id'=>$request->categoryid,
-            'sub_category'=>$request->subcategoryid,
-            'name'=>$request->name,
-            'code'=>$request->code,
-            'short_description'=>$request->shortdescription,
-            'specification'=>$request->specification,
-            'rate'=>$request->rate,
-            'photo'=> $imageName 
-            
+        $validated = $request->validate([
+            'name'             => 'required',
+            'code'             => 'required',
+            'shortdescription' => 'required',
+            'specification'    => 'required',
+            'rate'             => 'required',
+            'photo'            => 'required' // Max 2MB
         ]);
 
-      if($result){
-        return redirect()->route('product.index');
-      }  
+        $path = public_path().'/app/products';
 
+        if(!File::isDirectory($path)){
+            File::makeDirectory($path, 0777, true, true);
+        }
+        
+        $author = Product::find($id);
+        $image = $request->file('photo');
+
+        if(($request->hasFile('photo') && $request->file('photo')->isValid())){
+            File::delete(public_path().'/app/products/'. $author->photo);
+
+            $imageName = time().'.'.$image->getClientOriginalExtension();
+            Storage::disk('public2')->put($imageName, file_get_contents($image));
+        } else {
+            $imageName = $author->image;
+        }
+
+        $result = Product::find($id)->update([
+            'category_id'       => $request->categoryid,
+            'sub_category'      => $request->subcategoryid,
+            'name'              => $request->name,
+            'code'              => $request->code,
+            'short_description' => $request->shortdescription,
+            'specification'     => $request->specification,
+            'rate'              => $request->rate,
+            'photo'             => $imageName 
+        ]);
+
+        if($result){
+            // Method 1: Get page from hidden form field (most reliable)
+            $currentPage = $request->get('current_page', 1);
+            
+            // Method 2: Alternative - extract page from referer URL
+            // $referer = url()->previous();
+            // $currentPage = 1; // default
+            // if (preg_match('/[?&]page=(\d+)/', $referer, $matches)) {
+            //     $currentPage = $matches[1];
+            // }
+            
+            return redirect()->route('product.index', ['page' => $currentPage]);
+        }
     }
 
     /**
