@@ -120,53 +120,57 @@ class ProductController extends Controller
      */
     public function update(Request $request, string $id)
     {
-      $validated=$request->validate([
-        'name'             => 'required',
-        'code'             => 'required',
-        'shortdescription'=> 'required',
-        'specification'    => 'required',
-        'rate'             => 'required',
-        'photo'            => 'required' // Max 2MB
-      ]);
-
-
-      $path=public_path().'/app/products';
-
-      if(!File::isDirectory($path)){
-        File::makeDirectory($path,0777,true,true);
-      }
-      
-      $author = Product::find($id);
-      $image = $request->file('photo');
-
-      if(($request->hasFile('photo') && $request->file('photo')->isValid())){
-        File::delete(public_path().'/app/products/'. $author->photo);
-
-        $imageName = time().'.'.$image->getClientOriginalExtension();
-        Storage::disk('public2')->put($imageName, file_get_contents($image));
-      }
-      else{
-        $imageName = $author->image;
-    }
-
-        $result=Product::find($id)->update([
-            'category_id'=>$request->categoryid,
-            'sub_category'=>$request->subcategoryid,
-            'name'=>$request->name,
-            'code'=>$request->code,
-            'short_description'=>$request->shortdescription,
-            'specification'=>$request->specification,
-            'rate'=>$request->rate,
-            'photo'=> $imageName 
-            
+        $validated = $request->validate([
+            'name'             => 'required',
+            'code'             => 'required',
+            'shortdescription' => 'required',
+            'specification'    => 'required',
+            'rate'             => 'required',
+            'photo'            => 'required' // Max 2MB
         ]);
 
-      if($result){
-        // Get the current page from the request, default to 1
-        $currentPage = $request->get('current_page', 1);
-        return redirect()->route('product.index', ['page' => $currentPage]);
-      }  
+        $path = public_path().'/app/products';
 
+        if(!File::isDirectory($path)){
+            File::makeDirectory($path, 0777, true, true);
+        }
+        
+        $author = Product::find($id);
+        $image = $request->file('photo');
+
+        if(($request->hasFile('photo') && $request->file('photo')->isValid())){
+            File::delete(public_path().'/app/products/'. $author->photo);
+
+            $imageName = time().'.'.$image->getClientOriginalExtension();
+            Storage::disk('public2')->put($imageName, file_get_contents($image));
+        } else {
+            $imageName = $author->image;
+        }
+
+        $result = Product::find($id)->update([
+            'category_id'       => $request->categoryid,
+            'sub_category'      => $request->subcategoryid,
+            'name'              => $request->name,
+            'code'              => $request->code,
+            'short_description' => $request->shortdescription,
+            'specification'     => $request->specification,
+            'rate'              => $request->rate,
+            'photo'             => $imageName 
+        ]);
+
+        if($result){
+            // Method 1: Get page from hidden form field (most reliable)
+            $currentPage = $request->get('current_page', 1);
+            
+            // Method 2: Alternative - extract page from referer URL
+            // $referer = url()->previous();
+            // $currentPage = 1; // default
+            // if (preg_match('/[?&]page=(\d+)/', $referer, $matches)) {
+            //     $currentPage = $matches[1];
+            // }
+            
+            return redirect()->route('product.index', ['page' => $currentPage]);
+        }
     }
 
     /**
